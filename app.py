@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify
 from PIL import Image
 import io
@@ -9,15 +8,22 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def analyze_image():
     try:
-        if 'image' in request.files:
-            # Se enviou arquivo direto
-            file = request.files['image']
-            image = Image.open(io.BytesIO(file.read()))
-        elif 'image_url' in request.json:
-            # Se enviou uma URL
-            image_url = request.json['image_url']
+        data = {}
+        
+        # Tenta pegar JSON primeiro
+        if request.is_json:
+            data = request.get_json()
+        else:
+            # Se não for JSON, tenta pegar como form
+            data = request.form.to_dict()
+
+        if 'image_url' in data:
+            image_url = data['image_url']
             response = requests.get(image_url)
             image = Image.open(io.BytesIO(response.content))
+        elif 'image' in request.files:
+            file = request.files['image']
+            image = Image.open(io.BytesIO(file.read()))
         else:
             return jsonify({"erro": "Nenhuma imagem enviada."}), 400
 
